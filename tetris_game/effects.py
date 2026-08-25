@@ -71,6 +71,18 @@ def spawn_sparks(row: int, col: int, color: tuple, count: int = 6) -> list[Parti
     return particles
 
 
+def spawn_line_clear_sparks(cleared_rows: list[int],
+                            grid: list[list],
+                            count: int = 4) -> list[Particle]:
+    """Spark particles along cleared rows."""
+    particles: list[Particle] = []
+    for r in cleared_rows:
+        for c in range(BOARD_WIDTH):
+            if grid[r][c] is not None:
+                particles.extend(spawn_sparks(r, c, grid[r][c], count=count))
+    return particles
+
+
 # ------------------------------------------------------------------
 # Screen shake
 # ------------------------------------------------------------------
