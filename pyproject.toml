@@ -1,0 +1,13 @@
+[project]
+name = "tetris-game"
+version = "0.1.0"
+description = "Pygame Tetris clone"
+requires-python = ">=3.12"
+dependencies = [
+    "pygame",
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

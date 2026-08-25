@@ -21,7 +21,7 @@ A small Pygame Tetris clone designed to stay beginner-friendly while using a mai
 ## Setup
 
 ```bash
-pip install pygame
+uv sync
 ```
 
 ## Run
@@ -29,7 +29,7 @@ pip install pygame
 From the project root:
 
 ```bash
-python tetris.py
+uv run tetris.py
 ```
 
 ## Controls
