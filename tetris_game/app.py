@@ -317,16 +317,22 @@ def _draw_intro_screen(surface: pygame.Surface, elapsed: float):
     b = int(240 - 100 * hue_t)
     _draw_text(surface, _font_title, "TETRIS", (title_x, title_y), color=(r, g, b))
 
-    # ── Animated subtitle ──
-    subtitle = "Press Start to Play"
+    # ── Start button ──
+    btn_w = 160
+    btn_h = 36
+    btn_x = TOTAL_WIDTH // 2 - btn_w // 2
+    btn_y = title_y + 100
     pulse = math.sin(elapsed * 3.0) * 0.5 + 0.5
-    sub_alpha = int(128 + 127 * pulse)
-    sub_surf = pygame.Surface((200, 30), pygame.SRCALPHA)
-    _draw_text(sub_surf, _font, subtitle, (0, 0), color=(255, 255, 255, sub_alpha))
-    surface.blit(sub_surf, (TOTAL_WIDTH // 2 - 100, title_y + 60))
+    btn_color = tuple(int(c * 0.7 + 60 * pulse) for c in TETROMINO_COLORS["I"])
+    btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+    pygame.draw.rect(surface, btn_color, btn_rect, border_radius=6)
+    pygame.draw.rect(surface, WHITE, btn_rect, 2, border_radius=6)
+    btn_surf = pygame.Surface((160, 30), pygame.SRCALPHA)
+    _draw_text(btn_surf, _font, "START", (0, 0), color=BG_COLOR)
+    surface.blit(btn_surf, (btn_x + 20, btn_y + 3))
 
     # ── Decorative line ──
-    line_y = title_y + 75
+    line_y = title_y + 150
     line_w = int(160 + 40 * math.sin(elapsed * 2.0))
     line_color_alpha = int(180 + 75 * math.sin(elapsed * 1.5))
     pygame.draw.line(surface, (255, 255, 255, line_color_alpha),
@@ -334,7 +340,7 @@ def _draw_intro_screen(surface: pygame.Surface, elapsed: float):
                        (TOTAL_WIDTH // 2 + line_w // 2, line_y), 2)
 
     # ── Controls section ──
-    controls_y = int(TOTAL_HEIGHT * 0.42)
+    controls_y = int(TOTAL_HEIGHT * 0.46)
     _draw_text(surface, _font_small, "CONTROLS", (TOTAL_WIDTH // 2 - 30, controls_y),
                color=GRAY)
     controls_y += 25
