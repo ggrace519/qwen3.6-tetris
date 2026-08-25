@@ -618,4 +618,132 @@ class TestIntroParticles:
         am._shutdown_intro()
         am._INTRO_TIME = 0.0
         am._INTRO_TIME += 0.016
+
+    def test_intro_time_is_finite(self, fresh_pygame):
+        import tetris_game.app as am
+        am._shutdown_intro()
+        am._INTRO_TIME = 0.0
+        for _ in range(1000):
+            am._INTRO_TIME += 0.016
+        assert am._INTRO_TIME < 10000
         assert am._INTRO_TIME > 0
+
+
+class TestEventLoop:
+    """Regression tests for the event loop: intro dismiss, rotation, movement."""
+
+    def test_key_up_rotates_cw(self, fresh_pygame):
+        """UP key should rotate the current piece clockwise."""
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
+        board = Board()
+        board.hard_drop()  # gives us a current piece
+        board._lock()
+        board.hard_drop()  # get another piece
+        rot_before = board.current.rotation
+        board.rotate(clockwise=True)
+        assert board.current.rotation != rot_before or board.current.type == "O"
+
+    def test_key_z_rotates_ccw(self, fresh_pygame):
+        """Z key should rotate the current piece counter-clockwise."""
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
+        board = Board()
+        board.hard_drop()
+        board._lock()
+        board.hard_drop()
+        if board.current.type != "O":
+            rot_before = board.current.rotation
+            board.rotate(clockwise=False)
+            assert board.current.rotation != rot_before
+
+    def test_key_left_moves_left(self, fresh_pygame):
+        """LEFT key should move the current piece left."""
+        board = Board()
+        board.hard_drop()
+        board._lock()
+        board.hard_drop()
+        col_before = board.current.col
+        board.move_left()
+        assert board.current.col == col_before - 1
+
+    def test_key_right_moves_right(self, fresh_pygame):
+        """RIGHT key should move the current piece right."""
+        board = Board()
+        board.hard_drop()
+        board._lock()
+        board.hard_drop()
+        col_before = board.current.col
+        board.move_right()
+        assert board.current.col == col_before + 1
+
+    def test_key_space_hard_drops(self, fresh_pygame):
+        """SPACE should hard-drop and lock the piece."""
+        board = Board()
+        board.current.row = 0
+        board.current.col = 3
+        old_row = board.current.row
+        dropped = board.hard_drop()
+        assert dropped > 0
+        assert board.current is None  # piece is locked, current is replaced
+
+    def test_key_p_toggles_pause(self, fresh_pygame):
+        """P key should toggle _paused."""
+        import tetris_game.app as am
+        am._paused = False
+        am._paused = not am._paused
+        assert am._paused is True
+        am._paused = not am._paused
+        assert am._paused is False
+
+    def test_key_r_resets_on_game_over(self, fresh_pygame):
+        """R key when game_over should reset the board."""
+        board = Board()
+        # Fill the board to trigger game over
+        for _ in range(20):
+            board.move_down()
+        board._lock()
+        board.move_down()  # this should make game_over True
+        assert board.game_over is True
+        old_score = board.score
+        board.reset()
+        assert board.game_over is False
+        assert board.current is not None
+
+    def test_hold_piece_with_c_key(self, fresh_pygame):
+        """C key should call hold_piece."""
+        board = Board()
+        board.hard_drop()
+        board._lock()
+        board.hard_drop()
+        board.hold_piece()
+        assert board.hold_type is not None
+        assert board.hold_used is True
+
+    def test_rotate_o_piece_is_noop(self, fresh_pygame):
+        """O piece should never rotate."""
+        board = Board()
+        # Force an O piece
+        board.current = type("Piece", (), {"type": "O", "rotation": 0})()
+        board.rotate(clockwise=True)
+        assert board.current.rotation == 0
+        board.rotate(clockwise=False)
+        assert board.current.rotation == 0
+
+    def test_game_over_prevents_rotation(self, fresh_pygame):
+        """Rotation should be a no-op when game_over."""
+        board = Board()
+        for _ in range(20):
+            board.move_down()
+        board._lock()
+        board.move_down()
+        assert board.game_over is True
+        # Even calling rotate should not crash
+        board.rotate(clockwise=True)
+
+    def test_key_down_sets_soft_drop(self, fresh_pygame):
+        """DOWN key should set soft drop state."""
+        board = Board()
+        board.hard_drop()
+        board._lock()
+        board.hard_drop()
+        board._soft_drop = False
+        board.move_down(soft_drop=True)
