@@ -521,6 +521,33 @@ def run():
                             _show_intro = False
                             _shutdown_intro()
 
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and _show_intro:
+                    btn_rect = pygame.Rect(
+                        TOTAL_WIDTH // 2 - 80,
+                        int(TOTAL_HEIGHT * 0.22) + 100,
+                        160, 36,
+                    )
+                    if btn_rect.collidepoint(event.pos):
+                        _show_intro = False
+                        _shutdown_intro()
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+
+                    elif _show_intro:
+                        if event.key in (
+                            pygame.K_RETURN, pygame.K_SPACE,
+                            pygame.K_r, pygame.K_s, pygame.K_p,
+                            pygame.K_UP, pygame.K_DOWN,
+                            pygame.K_LEFT, pygame.K_RIGHT,
+                            pygame.K_LSHIFT, pygame.K_LCTRL,
+                            pygame.K_a, pygame.K_b, pygame.K_c,
+                            pygame.K_x, pygame.K_z,
+                        ):
+                            _show_intro = False
+                            _shutdown_intro()
+
                     elif event.key == pygame.K_p:
                         _paused = not _paused
 
