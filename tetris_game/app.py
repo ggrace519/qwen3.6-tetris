@@ -327,12 +327,15 @@ def run():
 
             render(_shake_buf, board)
 
-            # Blit with shake offset
+            # Blit with shake offset (clamp to prevent edge clipping)
             sx, sy = 0, 0
             if board.shake:
                 sx, sy = board.shake.offset()
                 if not board.shake.active:
                     board.shake = None
+            # Clamp so the surface never shifts off the visible area
+            sx = max(0, sx)
+            sy = max(0, sy)
             SCREEN.blit(_shake_buf, (sx, sy))
             pygame.display.flip()
 

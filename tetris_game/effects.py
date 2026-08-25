@@ -100,8 +100,9 @@ class ScreenShake:
     def offset(self) -> tuple[int, int]:
         if not self.active:
             return (0, 0)
-        dx = random.randint(-self.intensity, self.intensity)
-        dy = random.randint(-self.intensity, self.intensity)
+        half = max(1, self.intensity)
+        dx = random.randint(-half, half)
+        dy = random.randint(-half, half)
         self.intensity = max(0, round(self.intensity * self.decay))
         if self.intensity == 0:
             self.active = False
