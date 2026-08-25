@@ -72,14 +72,14 @@ def spawn_sparks(row: int, col: int, color: tuple, count: int = 6) -> list[Parti
 
 
 def spawn_line_clear_sparks(cleared_rows: list[int],
-                            grid: list[list],
+                            cleared_colors: list[list],
                             count: int = 4) -> list[Particle]:
     """Spark particles along cleared rows."""
     particles: list[Particle] = []
-    for r in cleared_rows:
-        for c in range(BOARD_WIDTH):
-            if grid[r][c] is not None:
-                particles.extend(spawn_sparks(r, c, grid[r][c], count=count))
+    for row_idx, row_colors in enumerate(cleared_colors):
+        for c, color in enumerate(row_colors):
+            if color is not None:
+                particles.extend(spawn_sparks(cleared_rows[row_idx], c, color, count=count))
     return particles
 
 

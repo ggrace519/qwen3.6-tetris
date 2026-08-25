@@ -229,9 +229,11 @@ class Board:
     def _clear_lines(self):
         """Remove full lines, update score, level, combo, and back-to-back."""
         cleared_rows: list[int] = []
+        cleared_colors: list[list] = []
         for r in range(BOARD_HEIGHT):
             if all(cell is not None for cell in self.grid[r]):
                 cleared_rows.append(r)
+                cleared_colors.append(list(self.grid[r]))
 
         num_lines = len(cleared_rows)
         if num_lines == 0:
@@ -278,7 +280,7 @@ class Board:
         )
         intensity = 1 + num_lines
         self.shake = ScreenShake(intensity=intensity, decay=0.8)
-        self.particles = spawn_line_clear_sparks(cleared_rows, self.grid, count=3)
+        self.particles = spawn_line_clear_sparks(cleared_rows, cleared_colors, count=3)
 
     def drop_speed(self) -> float:
         return drop_speed(self.level)
