@@ -22,6 +22,11 @@ class Board:
         self.bag: list[str] = []
         self.current: Piece | None = None
         self.next_type: str | None = None
+        # Extended next queue (show 5 pieces ahead)
+        self.next_queue: list[str] = []
+        # Hold piece slot
+        self.hold_type: str | None = None
+        self.hold_used: bool = False
         self.score = 0
         self.lines = 0
         self.level = 1
@@ -46,21 +51,65 @@ class Board:
             self._fill_bag()
         return self.bag.pop()
 
+    def _fill_next_queue(self):
+        """Ensure the next queue has at least 5 pieces."""
+        while len(self.next_queue) < 5:
+            self.next_queue.append(self._next_type())
+
     # ------------------------------------------------------------------
     # Spawning
     # ------------------------------------------------------------------
 
     def _spawn_next(self):
-        """Place the next piece from the bag, and draw a new next piece."""
-        if self.next_type is None:
-            self.next_type = self._next_type()
+        """Place the next piece from the queue, and draw new pieces into the queue."""
+        self._fill_next_queue()
+        # Pull the first piece from the queue
+        if self.next_type is None and self.hold_type is None:
+            # First spawn — use queue directly
+            self.next_type = self.next_queue.pop(0)
+        elif self.next_type is not None:
+            # Normal spawn — next_type was pre-set
+            pass
+        else:
+            # Coming from hold — next_type is already set
+            pass
+
         piece = Piece(self.next_type)
-        self.next_type = self._next_type()
+        # Pull the next piece from queue
+        self._fill_next_queue()
+        self.next_type = self.next_queue.pop(0)
         self.current = piece
 
         # Game-over: the newly spawned piece already collides
         if self._collides(piece.row, piece.col, piece.cells()):
             self.game_over = True
+
+    def hold_piece(self) -> bool:
+        """Swap the current piece into the hold slot and spawn the next piece.
+
+        Returns False if hold is already used this turn or there is no current piece.
+        """
+        if self.current is None:
+            return False
+        if self.hold_used:
+            return False
+
+        if self.hold_type is None:
+            # First hold — stash current piece, spawn next
+            self.hold_type = self.current.type
+            self._spawn_next()
+        else:
+            # Swap: current goes to hold, held piece spawns
+            held = self.current.type
+            self.hold_type = held
+            old_next = self.next_type
+            self._fill_next_queue()
+            self.next_type = self.next_queue.pop(0)
+            self.current = Piece(old_next)
+            self.current.row, self.current.col = 0, 3
+
+        self.hold_used = True
+        return True
 
     # ------------------------------------------------------------------
     # Collision
@@ -164,6 +213,7 @@ class Board:
         # Add accumulated soft-drop points
         self.score += self._soft_drop_points
         self._soft_drop_points = 0
+        self.hold_used = False  # allow hold again next piece
         for r, c in self.current.get_absolute_cells():
             assert 0 <= r < BOARD_HEIGHT and 0 <= c < BOARD_WIDTH, \
                 f"Piece cell ({r},{c}) out of bounds — collision detection failed"
