@@ -8,6 +8,12 @@ python tetris.py                     # run
 .venv/bin/pytest tests/              # test
 .venv/bin/pytest tests/ --cov=tetris_game --cov-report=term-missing  # coverage
 ```
+## Instructions
+- Code should be complete and cover edge cases where applicable.
+- Tests and documentation should be written/updated as new code is added. Tests should also cover edge cases and be adversarial in nature.
+- Git should be initialized and used properly. All new work should occur on its own, themed branch. It should be tested and reviewed adversarialy before asking the user for permission to merge into main.
+- Keep modules <= 600 lines and organize code so that related functions are in each module.
+
 
 ## Structure
 
@@ -41,3 +47,4 @@ tests/
 - The `app` module uses a `fresh_pygame` fixture that calls `_shutdown()` then `_ensure_initialized()`. Tests using it must not assert `_initialized` or `_font` via imported names (use `app_mod._initialized` via the module reference instead).
 - `pygame.time.Clock.tick` is read-only; patch `CLOCK` with a MagicMock, not its attributes.
 - `pytest.MagicMock` does not exist; use `unittest.mock.MagicMock`.
+
