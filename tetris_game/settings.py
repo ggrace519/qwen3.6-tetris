@@ -85,8 +85,18 @@ SHAPES = {
 
 TETROMINO_TYPES = ["I", "O", "T", "S", "Z", "J", "L"]
 
-# Scoring: (lines cleared) -> points, scaled by level multiplier later
+# Scoring (Tetris DS standard): base points for each line clear count.
+# These values already encode the level-1 scoring; the Board multiplies
+# by self.level at clear time.  Soft/hard drop points are scored separately.
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 800}
+
+# Drop scoring (Tetris DS standard)
+SOFT_DROP_POINTS = 1        # 1 point per cell for soft-dropping
+HARD_DROP_POINTS = 2        # 2 points per cell for hard-dropping
+
+# Combo / back-to-back
+B2B_MULTIPLIER = 1.5        # 1.5x for consecutive special clears (tetris or t-spin)
+COMBO_BASE = 50             # 50 points per combo count, scaled by level
 
 # Drop speed: seconds per automatic drop at each level
 # Level 1 = 1.0s, decreasing by 0.08s per level, minimum 0.05s

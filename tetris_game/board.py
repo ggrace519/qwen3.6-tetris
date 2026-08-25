@@ -2,7 +2,11 @@
 
 import random
 from .piece import Piece
-from .settings import BOARD_WIDTH, BOARD_HEIGHT, LINE_SCORES, drop_speed, TETROMINO_TYPES
+from .settings import (
+    BOARD_WIDTH, BOARD_HEIGHT, LINE_SCORES, drop_speed, TETROMINO_TYPES,
+    SOFT_DROP_POINTS, HARD_DROP_POINTS,
+    B2B_MULTIPLIER, COMBO_BASE,
+)
 
 
 class Board:
@@ -22,6 +26,11 @@ class Board:
         self.lines = 0
         self.level = 1
         self.game_over = False
+        # Scoring state (Tetris DS standard)
+        self._soft_drop_points = 0   # accumulated soft-drop points this piece
+        self._last_clear_type = "other"  # "tetris" | "t-spin" | "other"
+        self._combo_count = 0         # consecutive line clears
+        self._last_cleared = False    # did this piece just clear lines?
         self._spawn_next()
 
     # ------------------------------------------------------------------
@@ -87,11 +96,18 @@ class Board:
             return True
         return False
 
-    def move_down(self) -> bool:
+    def move_down(self, soft_drop: bool = False) -> bool:
+        """Move the current piece down one cell.
+
+        If *soft_drop* is True (player-held down key), award
+        :data:`SOFT_DROP_POINTS` per cell toward the score.
+        """
         if self.current is None:
             return False
         if not self._collides(self.current.row + 1, self.current.col, self.current.cells()):
             self.current.move(1, 0)
+            if soft_drop:
+                self._soft_drop_points += SOFT_DROP_POINTS
             return True
         return False
 
@@ -124,7 +140,7 @@ class Board:
         while not self._collides(self.current.row + 1, self.current.col, self.current.cells()):
             self.current.row += 1
             drop_dist += 1
-        self.score += drop_dist * 2
+        self.score += drop_dist * HARD_DROP_POINTS
         self._lock()
         return drop_dist
 
@@ -145,6 +161,9 @@ class Board:
         """Lock the current piece into the grid, clear lines, spawn next."""
         if self.current is None:
             return
+        # Add accumulated soft-drop points
+        self.score += self._soft_drop_points
+        self._soft_drop_points = 0
         for r, c in self.current.get_absolute_cells():
             assert 0 <= r < BOARD_HEIGHT and 0 <= c < BOARD_WIDTH, \
                 f"Piece cell ({r},{c}) out of bounds — collision detection failed"
@@ -153,7 +172,7 @@ class Board:
         self._spawn_next()
 
     def _clear_lines(self):
-        """Remove full lines, update score, level, and line count."""
+        """Remove full lines, update score, level, combo, and back-to-back."""
         cleared_rows: list[int] = []
         for r in range(BOARD_HEIGHT):
             if all(cell is not None for cell in self.grid[r]):
@@ -161,6 +180,7 @@ class Board:
 
         num_lines = len(cleared_rows)
         if num_lines == 0:
+            self._last_cleared = False
             return
 
         # Remove cleared rows from top to bottom
@@ -170,9 +190,27 @@ class Board:
         for _ in cleared_rows:
             self.grid.insert(0, [None] * BOARD_WIDTH)
 
-        # Scoring
+        # Scoring: base line clear points × level
+        base_score = LINE_SCORES.get(num_lines, 800) * self.level
+
+        # Track clear type for back-to-back
+        is_special = num_lines == 4  # "tetris" — could extend to T-spins later
+        if is_special and self._last_clear_type in ("tetris", "t-spin"):
+            # Back-to-back: 1.5× multiplier
+            base_score = int(base_score * B2B_MULTIPLIER)
+        self._last_clear_type = "tetris" if is_special else "other"
+
+        # Combo bonus: consecutive line clears across pieces
+        if self._last_cleared:
+            self._combo_count += 1
+            combo_bonus = COMBO_BASE * self._combo_count * self.level
+            base_score += combo_bonus
+        else:
+            self._combo_count = 1  # start combo chain
+        self._last_cleared = True
+
         self.lines += num_lines
-        self.score += LINE_SCORES.get(num_lines, 800) * self.level
+        self.score += base_score
 
         # Level up every 10 lines
         self.level = self.lines // 10 + 1

@@ -217,6 +217,7 @@ def run():
 
     board = Board()
     drop_timer = 0.0
+    _soft_drop = False
 
     running = True
     try:
@@ -227,7 +228,7 @@ def run():
                 if event.type == pygame.QUIT:
                     running = False
 
-                if event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
 
@@ -238,13 +239,16 @@ def run():
                         board.reset()
                         drop_timer = 0.0
 
+                    elif event.key == pygame.K_DOWN:
+                        _soft_drop = True
+                        if not _paused and not board.game_over and board.current:
+                            board.move_down(soft_drop=True)
+
                     elif not _paused and not board.game_over and board.current:
                         if event.key == pygame.K_LEFT:
                             board.move_left()
                         elif event.key == pygame.K_RIGHT:
                             board.move_right()
-                        elif event.key == pygame.K_DOWN:
-                            board.move_down()
                         elif event.key in (pygame.K_UP, pygame.K_x):
                             board.rotate(clockwise=True)
                         elif event.key == pygame.K_z:
@@ -252,13 +256,17 @@ def run():
                         elif event.key == pygame.K_SPACE:
                             board.hard_drop()
 
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_DOWN:
+                        _soft_drop = False
+
             # Auto-drop
             if not _paused and not board.game_over and board.current:
                 drop_timer += dt
                 speed = board.drop_speed()
                 while drop_timer >= speed:
                     drop_timer -= speed
-                    if not board.move_down():
+                    if not board.move_down(soft_drop=_soft_drop):
                         board._lock()
                         drop_timer = 0.0
                         break
