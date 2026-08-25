@@ -1,5 +1,7 @@
 # Python Tetris
 
+A small Pygame Tetris clone — fun project that demonstrates what the Qwen3.6-35B coding model can produce end-to-end, from architecture through implementation, testing, and polish.
+
 A small Pygame Tetris clone designed to stay beginner-friendly while using a maintainable project structure.
 
 ## Features
