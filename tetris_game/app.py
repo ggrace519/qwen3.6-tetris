@@ -18,6 +18,7 @@ from .settings import (
     SIDEBAR_WIDTH,
     TOTAL_WIDTH,
     TOTAL_HEIGHT,
+    WINDOW_MARGIN,
     SHAPES,
     TETROMINO_COLORS,
     TETROMINO_TYPES,
@@ -81,14 +82,15 @@ def _draw_text(surface, font, text, pos, color=WHITE):
     font.render_to(surface, pos, text, fgcolor=color)
 
 
-def _draw_sidebar(surface, board):
+def _draw_sidebar(surface, board, margin=0):
     """Draw the sidebar: title, hold piece, next piece, score, level, lines."""
-    sidebar_x = BOARD_WIDTH * CELL_SIZE
+    sidebar_x = BOARD_WIDTH * CELL_SIZE + margin
+    m = margin
 
     # Separator line
-    pygame.draw.line(surface, GRAY, (sidebar_x, 0), (sidebar_x, TOTAL_HEIGHT), 2)
+    pygame.draw.line(surface, GRAY, (sidebar_x, m), (sidebar_x, TOTAL_HEIGHT - m), 2)
 
-    y_offset = 20
+    y_offset = 20 + m
 
     # Title
     _draw_text(surface, _font_title, "TETRIS",
@@ -300,15 +302,14 @@ def _draw_intro_screen(surface: pygame.Surface, elapsed: float):
         _draw_intro_piece(p, elapsed, surface)
 
     # ── Title "TETRIS" with glow ──
-    title_y = int(TOTAL_HEIGHT * 0.28)
+    title_y = int(TOTAL_HEIGHT * 0.22)
     title_x = TOTAL_WIDTH // 2 - 50
 
     for glow in range(5, 0, -1):
-        glow_surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT), pygame.SRCALPHA)
-        _draw_text(glow_surf, _font_title, "TETRIS",
-                    (title_x, title_y))
+        glow_surf = pygame.Surface((160, 50), pygame.SRCALPHA)
+        _draw_text(glow_surf, _font_title, "TETRIS", (0, 0))
         glow_surf.set_alpha(int(40 / glow))
-        surface.blit(glow_surf, (0, 0))
+        surface.blit(glow_surf, (title_x, title_y))
 
     hue_t = math.sin(elapsed * 1.2) * 0.5 + 0.5
     r = int(200 + 55 * hue_t)
@@ -320,20 +321,20 @@ def _draw_intro_screen(surface: pygame.Surface, elapsed: float):
     subtitle = "Press Start to Play"
     pulse = math.sin(elapsed * 3.0) * 0.5 + 0.5
     sub_alpha = int(128 + 127 * pulse)
-    subtitle_surf = pygame.Surface((TOTAL_WIDTH, 30), pygame.SRCALPHA)
-    _draw_text(subtitle_surf, _font, subtitle, (0, 0), color=(255, 255, 255, sub_alpha))
-    surface.blit(subtitle_surf, (TOTAL_WIDTH // 2 - 80, title_y + 55))
+    sub_surf = pygame.Surface((200, 30), pygame.SRCALPHA)
+    _draw_text(sub_surf, _font, subtitle, (0, 0), color=(255, 255, 255, sub_alpha))
+    surface.blit(sub_surf, (TOTAL_WIDTH // 2 - 100, title_y + 60))
 
     # ── Decorative line ──
-    line_y = title_y + 40
+    line_y = title_y + 75
     line_w = int(160 + 40 * math.sin(elapsed * 2.0))
     line_color_alpha = int(180 + 75 * math.sin(elapsed * 1.5))
     pygame.draw.line(surface, (255, 255, 255, line_color_alpha),
-                      (TOTAL_WIDTH // 2 - line_w // 2, line_y),
-                      (TOTAL_WIDTH // 2 + line_w // 2, line_y), 2)
+                       (TOTAL_WIDTH // 2 - line_w // 2, line_y),
+                       (TOTAL_WIDTH // 2 + line_w // 2, line_y), 2)
 
     # ── Controls section ──
-    controls_y = int(TOTAL_HEIGHT * 0.55)
+    controls_y = int(TOTAL_HEIGHT * 0.42)
     _draw_text(surface, _font_small, "CONTROLS", (TOTAL_WIDTH // 2 - 30, controls_y),
                color=GRAY)
     controls_y += 25
@@ -349,16 +350,16 @@ def _draw_intro_screen(surface: pygame.Surface, elapsed: float):
         ("Esc", "Quit"),
     ]
     for key, desc in controls:
-        key_surf = pygame.Surface((TOTAL_WIDTH, 20), pygame.SRCALPHA)
-        _draw_text(key_surf, _font_small, key, (TOTAL_WIDTH // 2 - 80, 0), color=WHITE)
-        val_surf = pygame.Surface((TOTAL_WIDTH, 20), pygame.SRCALPHA)
-        _draw_text(val_surf, _font_small, desc, (TOTAL_WIDTH // 2 + 60, 0), color=GRAY)
-        surface.blit(key_surf, (0, controls_y))
-        surface.blit(val_surf, (0, controls_y))
+        key_surf = pygame.Surface((80, 20), pygame.SRCALPHA)
+        _draw_text(key_surf, _font_small, key, (0, 0), color=WHITE)
+        val_surf = pygame.Surface((100, 20), pygame.SRCALPHA)
+        _draw_text(val_surf, _font_small, desc, (0, 0), color=GRAY)
+        surface.blit(key_surf, (TOTAL_WIDTH // 2 - 100, controls_y))
+        surface.blit(val_surf, (TOTAL_WIDTH // 2 + 20, controls_y))
         controls_y += 20
 
     # ── Animated tetromino showcase ──
-    showcase_y = int(TOTAL_HEIGHT * 0.82)
+    showcase_y = int(TOTAL_HEIGHT * 0.78)
     for i, (ptype, color) in enumerate(zip(TETROMINO_TYPES, TETROMINO_COLORS.values())):
         rot = int(elapsed * 0.8 + i * 0.7) % 4
         cells = SHAPES[ptype][rot]
@@ -402,12 +403,13 @@ def _shutdown_intro():
 def render(surface: pygame.Surface, board: Board):
     """Clear screen and draw the entire game state (with effects)."""
     surface.fill(BG_COLOR)
+    m = WINDOW_MARGIN
 
     # Grid background
     for r in range(BOARD_HEIGHT):
         for c in range(BOARD_WIDTH):
-            x = c * CELL_SIZE
-            y = r * CELL_SIZE
+            x = c * CELL_SIZE + m
+            y = r * CELL_SIZE + m
             rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(surface, DARK_GRAY, rect, 1)
             if board.grid[r][c] is not None:
@@ -421,8 +423,8 @@ def render(surface: pygame.Surface, board: Board):
             gr = ghost_r + dr
             gc = current.col + dc
             if 0 <= gr < BOARD_HEIGHT and 0 <= gc < BOARD_WIDTH:
-                x = gc * CELL_SIZE
-                y = gr * CELL_SIZE
+                x = gc * CELL_SIZE + m
+                y = gr * CELL_SIZE + m
                 rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
                 pygame.draw.rect(surface, (60, 60, 60), rect)
                 pygame.draw.rect(surface, (128, 128, 128), rect, 1)
@@ -435,7 +437,7 @@ def render(surface: pygame.Surface, board: Board):
                 _draw_cell(surface, r, c, current.color)
 
     # Sidebar
-    _draw_sidebar(surface, board)
+    _draw_sidebar(surface, board, m)
 
     # Update and draw particles
     board.particles = [p for p in board.particles if p.update()]
