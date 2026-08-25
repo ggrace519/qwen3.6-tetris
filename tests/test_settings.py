@@ -8,6 +8,7 @@ from tetris_game.settings import (
     SIDEBAR_WIDTH,
     TOTAL_WIDTH,
     TOTAL_HEIGHT,
+    WINDOW_MARGIN,
     BLACK,
     WHITE,
     GRAY,
@@ -43,8 +44,8 @@ class TestDimensions:
         assert CELL_SIZE == 30
 
     def test_total_dimensions(self):
-        assert TOTAL_WIDTH == BOARD_WIDTH * CELL_SIZE + SIDEBAR_WIDTH  # 450
-        assert TOTAL_HEIGHT == BOARD_HEIGHT * CELL_SIZE  # 600
+        assert TOTAL_WIDTH == BOARD_WIDTH * CELL_SIZE + SIDEBAR_WIDTH + WINDOW_MARGIN  # 454
+        assert TOTAL_HEIGHT == BOARD_HEIGHT * CELL_SIZE + WINDOW_MARGIN  # 604
 
     def test_sidebar_width(self):
         assert SIDEBAR_WIDTH == 150

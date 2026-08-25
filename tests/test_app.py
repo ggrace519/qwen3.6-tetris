@@ -16,6 +16,7 @@ from tetris_game.settings import (
     SIDEBAR_WIDTH,
     TOTAL_WIDTH,
     TOTAL_HEIGHT,
+    WINDOW_MARGIN,
     GRAY,
     DARK_GRAY,
     WHITE,
@@ -89,12 +90,12 @@ class TestDrawText:
 
 class TestDrawSidebar:
     def test_draw_sidebar_no_crash(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         app_mod._draw_sidebar(surf, board)
 
     def test_draw_sidebar_draws_separator(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         surf.fill((0, 0, 0))
         board = Board()
         app_mod._draw_sidebar(surf, board)
@@ -102,25 +103,25 @@ class TestDrawSidebar:
         assert surf.get_at((x, 100))[:3] != (0, 0, 0)
 
     def test_draw_sidebar_with_score(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.score = 1000
         app_mod._draw_sidebar(surf, board)
 
     def test_draw_sidebar_with_level(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.level = 5
         app_mod._draw_sidebar(surf, board)
 
     def test_draw_sidebar_with_lines(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.lines = 20
         app_mod._draw_sidebar(surf, board)
 
     def test_draw_sidebar_no_next_type(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.next_type = None
         app_mod._draw_sidebar(surf, board)
@@ -128,25 +129,25 @@ class TestDrawSidebar:
 
 class TestRender:
     def test_render_fills_background(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         app_mod.render(surf, board)
         assert surf.get_at((400, 100))[:3] == BG_COLOR
 
     def test_render_draws_grid_lines(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         app_mod.render(surf, board)
-        assert surf.get_at((CELL_SIZE, CELL_SIZE))[:3] == DARK_GRAY
+        assert surf.get_at((CELL_SIZE + WINDOW_MARGIN, CELL_SIZE + WINDOW_MARGIN))[:3] == DARK_GRAY
 
     def test_render_draws_current_piece(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.hard_drop()
         app_mod.render(surf, board)
         has_piece = False
-        for y in range(0, BOARD_HEIGHT * CELL_SIZE, CELL_SIZE):
-            for x in range(0, BOARD_WIDTH * CELL_SIZE, CELL_SIZE):
+        for y in range(WINDOW_MARGIN, BOARD_HEIGHT * CELL_SIZE + WINDOW_MARGIN, CELL_SIZE):
+            for x in range(WINDOW_MARGIN, BOARD_WIDTH * CELL_SIZE + WINDOW_MARGIN, CELL_SIZE):
                 pixel = surf.get_at((x, y))[:3]
                 if pixel != DARK_GRAY and pixel != BG_COLOR:
                     has_piece = True
@@ -155,13 +156,13 @@ class TestRender:
                 break
 
     def test_render_draws_sidebar(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.score = 500
         app_mod.render(surf, board)
 
     def test_render_with_locked_cells(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         for _ in range(20):
             board.move_down()
@@ -169,18 +170,18 @@ class TestRender:
         app_mod.render(surf, board)
 
     def test_render_board_dimensions(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         app_mod.render(surf, board)
-        assert surf.get_size() == (450, 600)
+        assert surf.get_size() == (TOTAL_WIDTH, TOTAL_HEIGHT)
 
 
 class TestModuleConstants:
     def test_total_width(self):
-        assert TOTAL_WIDTH == 450
+        assert TOTAL_WIDTH == 454
 
     def test_total_height(self):
-        assert TOTAL_HEIGHT == 600
+        assert TOTAL_HEIGHT == 604
 
     def test_sidebar_width(self):
         assert SIDEBAR_WIDTH == 150
@@ -194,7 +195,7 @@ class TestRenderPaused:
 
     def test_render_paused_shows_overlay(self, fresh_pygame):
         import tetris_game.app as am
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         # Set _paused at module level
         am._paused = True
@@ -206,7 +207,7 @@ class TestRenderPaused:
 
     def test_render_not_paused_no_overlay(self, fresh_pygame):
         import tetris_game.app as am
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         am._paused = False
         am.render(surf, board)
@@ -220,7 +221,7 @@ class TestRenderGameOver:
 
     def test_render_game_over_shows_overlay(self, fresh_pygame):
         import tetris_game.app as am
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.game_over = True
         am.render(surf, board)
@@ -230,7 +231,7 @@ class TestRenderGameOver:
 
     def test_render_game_over_shows_score(self, fresh_pygame):
         import tetris_game.app as am
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.score = 9999
         board.game_over = True
@@ -242,7 +243,7 @@ class TestRenderPausedWithGameOver:
 
     def test_game_over_overrides_pause(self, fresh_pygame):
         import tetris_game.app as am
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.game_over = True
         am._paused = True
@@ -397,20 +398,20 @@ class TestDrawSidebarHold:
     """Test hold piece rendering in sidebar."""
 
     def test_draw_sidebar_with_hold_piece(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.hold_type = "I"
         app_mod._draw_sidebar(surf, board)
 
     def test_draw_sidebar_hold_dimmed_when_used(self):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.hold_type = "I"
         board.hold_used = True
         app_mod._draw_sidebar(surf, board)
 
     def test_draw_sidebar_hold_none(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.hold_type = None
         board.hold_used = True
@@ -421,7 +422,7 @@ class TestParticleDrawing:
     """Test that particles are drawn in render()."""
 
     def test_render_with_particles(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         p = app_mod.Particle(x=100.0, y=100.0, color=(255, 0, 0), vx=1.0, vy=1.0, life=15, size=2)
         board.particles.append(p)
@@ -434,22 +435,22 @@ class TestFlashOverlay:
 
     def test_render_with_flash(self, fresh_pygame):
         from tetris_game.effects import FlashOverlay
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
-        board.flash = FlashOverlay(width=450, height=600, frames=5)
+        board.flash = FlashOverlay(width=TOTAL_WIDTH, height=TOTAL_HEIGHT, frames=5)
         app_mod.render(surf, board)
         assert board.flash.frames < 5
 
     def test_render_flash_cleanup(self, fresh_pygame):
         from tetris_game.effects import FlashOverlay
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
-        board.flash = FlashOverlay(width=450, height=600, frames=1)
+        board.flash = FlashOverlay(width=TOTAL_WIDTH, height=TOTAL_HEIGHT, frames=1)
         app_mod.render(surf, board)
         assert board.flash is None
 
     def test_render_no_flash(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.flash = None
         app_mod.render(surf, board)
@@ -460,7 +461,7 @@ class TestRenderGhost:
     """Test ghost piece rendering."""
 
     def test_render_draws_ghost_piece(self, fresh_pygame):
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.current.row = 0
         app_mod.render(surf, board)
@@ -473,7 +474,7 @@ class TestRenderWithShake:
 
     def test_render_with_shake(self, fresh_pygame):
         from tetris_game.effects import ScreenShake
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.shake = ScreenShake(intensity=3, decay=0.85)
         app_mod.render(surf, board)
@@ -538,14 +539,14 @@ class TestIntroParticles:
     def test_draw_intro_screen_no_crash(self, fresh_pygame):
         import tetris_game.app as am
         am._shutdown_intro()
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         am._draw_intro_screen(surf, elapsed=0.0)
-        assert surf.get_size() == (450, 600)
+        assert surf.get_size() == (TOTAL_WIDTH, TOTAL_HEIGHT)
 
     def test_draw_intro_screen_changes_pixels(self, fresh_pygame):
         import tetris_game.app as am
         am._shutdown_intro()
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         surf.fill((0, 0, 0))
         am._draw_intro_screen(surf, elapsed=1.0)
         center_pixel = surf.get_at((225, 168))[:3]
@@ -554,7 +555,7 @@ class TestIntroParticles:
     def test_draw_intro_screen_with_elapsed(self, fresh_pygame):
         import tetris_game.app as am
         am._shutdown_intro()
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         am._draw_intro_screen(surf, elapsed=0.5)
         am._draw_intro_screen(surf, elapsed=1.0)
         am._draw_intro_screen(surf, elapsed=2.0)
@@ -585,7 +586,7 @@ class TestIntroParticles:
             "alpha": 0.1,
             "size_mult": 1.0,
         }
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         am._draw_intro_piece(p, elapsed=1.0, surface=surf)
 
     def test_draw_intro_piece_rotation(self, fresh_pygame):
@@ -604,7 +605,7 @@ class TestIntroParticles:
             "alpha": 0.1,
             "size_mult": 1.0,
         }
-        surf = pygame.Surface((450, 600))
+        surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         am._draw_intro_piece(p, elapsed=1.0, surface=surf)
 
     def test_ensure_intro_surface(self, fresh_pygame):
