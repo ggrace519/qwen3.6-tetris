@@ -279,7 +279,7 @@ class Board:
             frames=8 + num_lines * 2,
         )
         intensity = 1 + num_lines
-        self.shake = ScreenShake(intensity=intensity, decay=0.65)
+        self.shake = ScreenShake(intensity=intensity, decay=0.4)
         self.particles = spawn_line_clear_sparks(cleared_rows, cleared_colors, count=3)
 
     def drop_speed(self) -> float:
