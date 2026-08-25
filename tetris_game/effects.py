@@ -13,10 +13,7 @@ from .settings import (
 
 def _pygame_ready() -> bool:
     """Return True if pygame is initialized (for test safety)."""
-    try:
-        return pygame.get_init()[0]
-    except Exception:
-        return False
+    return bool(pygame.get_init())
 
 
 # ------------------------------------------------------------------
