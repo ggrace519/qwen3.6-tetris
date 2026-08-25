@@ -19,6 +19,7 @@ from .settings import (
     SHAPES,
     TETROMINO_COLORS,
 )
+from .effects import Particle
 
 
 # Module-level game objects — created on first call to run()
@@ -185,8 +186,8 @@ def _draw_sidebar(surface, board):
 _paused = False
 
 
-def render(surface, board):
-    """Clear screen and draw the entire game state."""
+def render(surface: pygame.Surface, board: Board):
+    """Clear screen and draw the entire game state (with effects)."""
     surface.fill(BG_COLOR)
 
     # Grid background
@@ -223,6 +224,18 @@ def render(surface, board):
     # Sidebar
     _draw_sidebar(surface, board)
 
+    # Update and draw particles
+    board.particles = [p for p in board.particles if p.update()]
+    for p in board.particles:
+        p.draw(surface)
+
+    # Draw flash overlay
+    if board.flash:
+        board.flash.tick()
+        board.flash.draw(surface)
+        if not board.flash.active:
+            board.flash = None
+
     # Pause overlay
     if _paused and not board.game_over:
         overlay = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
@@ -253,6 +266,9 @@ def run():
     board = Board()
     drop_timer = 0.0
     _soft_drop = False
+
+    # Double-buffer surface for screen shake
+    _shake_buf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
 
     running = True
     try:
@@ -309,7 +325,15 @@ def run():
                         drop_timer = 0.0
                         break
 
-            render(SCREEN, board)
+            render(_shake_buf, board)
+
+            # Blit with shake offset
+            sx, sy = 0, 0
+            if board.shake:
+                sx, sy = board.shake.offset()
+                if not board.shake.active:
+                    board.shake = None
+            SCREEN.blit(_shake_buf, (sx, sy))
             pygame.display.flip()
 
     finally:
