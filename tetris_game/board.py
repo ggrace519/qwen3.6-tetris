@@ -7,6 +7,7 @@ from .settings import (
     SOFT_DROP_POINTS, HARD_DROP_POINTS,
     B2B_MULTIPLIER, COMBO_BASE,
 )
+from .effects import ScreenShake, FlashOverlay, spawn_line_clear_sparks
 
 
 class Board:
@@ -36,6 +37,10 @@ class Board:
         self._last_clear_type = "other"  # "tetris" | "t-spin" | "other"
         self._combo_count = 0         # consecutive line clears
         self._last_cleared = False    # did this piece just clear lines?
+        # Visual effects
+        self.shake: ScreenShake | None = None
+        self.flash: FlashOverlay | None = None
+        self.particles: list = []     # list of Particle objects
         self._spawn_next()
 
     # ------------------------------------------------------------------
@@ -264,6 +269,16 @@ class Board:
 
         # Level up every 10 lines
         self.level = self.lines // 10 + 1
+
+        # Trigger visual effects proportional to lines cleared
+        self.flash = FlashOverlay(
+            BOARD_WIDTH * 30 + 150,   # TOTAL_WIDTH
+            BOARD_HEIGHT * 30,         # TOTAL_HEIGHT
+            frames=8 + num_lines * 2,
+        )
+        intensity = 1 + num_lines
+        self.shake = ScreenShake(intensity=intensity, decay=0.8)
+        self.particles = spawn_line_clear_sparks(cleared_rows, self.grid, count=3)
 
     def drop_speed(self) -> float:
         return drop_speed(self.level)
