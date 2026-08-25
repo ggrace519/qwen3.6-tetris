@@ -12,19 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.12"
-          cache-dependency-glob: "requirements.in"
 
       - name: Create venv and install deps
-        run: uv venv && uv pip install -r requirements.in
+        run: uv sync --locked
 
       - name: Run tests with coverage
         run: |
