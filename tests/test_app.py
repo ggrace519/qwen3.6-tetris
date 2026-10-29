@@ -128,7 +128,7 @@ class TestDrawSidebar:
 
 
 class TestRender:
-    def test_render_fills_background(self):
+    def test_render_fills_background(self, fresh_pygame):
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         app_mod.render(surf, board)
@@ -194,23 +194,23 @@ class TestRenderPaused:
     """Test pause overlay rendering."""
 
     def test_render_paused_shows_overlay(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         # Set _paused at module level
-        am._paused = True
-        am.render(surf, board)
+        app_mod._paused = True
+        app_mod.render(surf, board)
         # Overlay should have changed some pixels
         center_pixel = surf.get_at((225, 300))[:3]
         # The overlay is black with alpha 128 over BG
         assert center_pixel != BG_COLOR
 
     def test_render_not_paused_no_overlay(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
-        am._paused = False
-        am.render(surf, board)
+        app_mod._paused = False
+        app_mod.render(surf, board)
         # Center of board area should be grid color or BG
         pixel = surf.get_at((150, 150))[:3]
         assert pixel in (DARK_GRAY, BG_COLOR)
@@ -220,34 +220,34 @@ class TestRenderGameOver:
     """Test game over overlay rendering."""
 
     def test_render_game_over_shows_overlay(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.game_over = True
-        am.render(surf, board)
+        app_mod.render(surf, board)
         # Center should have changed from BG
         center_pixel = surf.get_at((225, 280))[:3]
         assert center_pixel != BG_COLOR
 
     def test_render_game_over_shows_score(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.score = 9999
         board.game_over = True
-        am.render(surf, board)
+        app_mod.render(surf, board)
 
 
 class TestRenderPausedWithGameOver:
     """When both paused and game over, only game over shows."""
 
     def test_game_over_overrides_pause(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         board = Board()
         board.game_over = True
-        am._paused = True
-        am.render(surf, board)
+        app_mod._paused = True
+        app_mod.render(surf, board)
         # Game over overlay (alpha 180) should be on top
         pixel = surf.get_at((225, 280))[:3]
         assert pixel != BG_COLOR
@@ -485,9 +485,9 @@ class TestIntroParticles:
     """Test intro splash screen particle spawning and drawing."""
 
     def test_spawn_intro_particles_creates_list(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
-        particles = am._spawn_intro_particles(count=20)
+        import tetris_game.intro as im
+        im.shutdown_intro()
+        particles = im._spawn_intro_particles(count=20)
         assert isinstance(particles, list)
         assert len(particles) == 20
         assert "x" in particles[0]
@@ -495,84 +495,104 @@ class TestIntroParticles:
         assert "color" in particles[0]
 
     def test_spawn_intro_particles_stores_globally(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
-        am._spawn_intro_particles()
-        assert am._INTRO_PARTICLES is not None
-        assert len(am._INTRO_PARTICLES) == 120
+        import tetris_game.intro as im
+        im.shutdown_intro()
+        im._spawn_intro_particles()
+        assert im._INTRO_PARTICLES is not None
+        assert len(im._INTRO_PARTICLES) == 120
 
     def test_spawn_intro_particles_has_wobble_params(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
-        particles = am._spawn_intro_particles(count=10)
+        import tetris_game.intro as im
+        im.shutdown_intro()
+        particles = im._spawn_intro_particles(count=10)
         for p in particles:
             assert "wobble_phase" in p
             assert "wobble_speed" in p
             assert "wobble_amp" in p
 
     def test_spawn_intro_particles_colors_from_tetrominoes(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         from tetris_game.settings import TETROMINO_COLORS
-        am._shutdown_intro()
+        im.shutdown_intro()
         colors_set = set(TETROMINO_COLORS.values())
-        particles = am._spawn_intro_particles(count=50)
+        particles = im._spawn_intro_particles(count=50)
         for p in particles:
             assert tuple(p["color"]) in colors_set
 
     def test_spawn_intro_falling_pieces(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
-        pieces = am._spawn_intro_falling_pieces(count=10)
+        import tetris_game.intro as im
+        im.shutdown_intro()
+        pieces = im._spawn_intro_falling_pieces(count=10)
         assert isinstance(pieces, list)
         assert len(pieces) == 10
         assert "type" in pieces[0]
         assert "speed" in pieces[0]
 
     def test_spawn_intro_falling_pieces_types(self, fresh_pygame):
-        import tetris_game.app as am
+        import tetris_game.intro as im
         from tetris_game.settings import TETROMINO_TYPES
-        am._shutdown_intro()
-        pieces = am._spawn_intro_falling_pieces(count=30)
+        im.shutdown_intro()
+        pieces = im._spawn_intro_falling_pieces(count=30)
         piece_types = {p["type"] for p in pieces}
         assert piece_types.issubset(set(TETROMINO_TYPES))
 
     def test_draw_intro_screen_no_crash(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
+        import tetris_game.intro as im
+        im.shutdown_intro()
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
-        am._draw_intro_screen(surf, elapsed=0.0)
+        im._draw_intro_screen(surf, elapsed=0.0,
+                              draw_text=app_mod._draw_text,
+                              font_title=fresh_pygame[2],
+                              font=fresh_pygame[0],
+                              font_small=fresh_pygame[1])
         assert surf.get_size() == (TOTAL_WIDTH, TOTAL_HEIGHT)
 
     def test_draw_intro_screen_changes_pixels(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
+        import tetris_game.intro as im
+        im.shutdown_intro()
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
         surf.fill((0, 0, 0))
-        am._draw_intro_screen(surf, elapsed=1.0)
+        im._draw_intro_screen(surf, elapsed=1.0,
+                              draw_text=app_mod._draw_text,
+                              font_title=fresh_pygame[2],
+                              font=fresh_pygame[0],
+                              font_small=fresh_pygame[1])
         center_pixel = surf.get_at((225, 168))[:3]
         assert center_pixel != (0, 0, 0)
 
     def test_draw_intro_screen_with_elapsed(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
+        import tetris_game.intro as im
+        im.shutdown_intro()
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
-        am._draw_intro_screen(surf, elapsed=0.5)
-        am._draw_intro_screen(surf, elapsed=1.0)
-        am._draw_intro_screen(surf, elapsed=2.0)
+        im._draw_intro_screen(surf, elapsed=0.5,
+                              draw_text=app_mod._draw_text,
+                              font_title=fresh_pygame[2],
+                              font=fresh_pygame[0],
+                              font_small=fresh_pygame[1])
+        im._draw_intro_screen(surf, elapsed=1.0,
+                              draw_text=app_mod._draw_text,
+                              font_title=fresh_pygame[2],
+                              font=fresh_pygame[0],
+                              font_small=fresh_pygame[1])
+        im._draw_intro_screen(surf, elapsed=2.0,
+                              draw_text=app_mod._draw_text,
+                              font_title=fresh_pygame[2],
+                              font=fresh_pygame[0],
+                              font_small=fresh_pygame[1])
 
     def test_shutdown_intro_resets_state(self, fresh_pygame):
-        import tetris_game.app as am
-        am._spawn_intro_particles()
-        am._spawn_intro_falling_pieces()
-        am._INTRO_TIME = 42.0
-        am._shutdown_intro()
-        assert am._INTRO_PARTICLES is None
-        assert am._INTRO_PIECES is None
-        assert am._INTRO_TIME == 0.0
+        import tetris_game.intro as im
+        im._spawn_intro_particles()
+        im._spawn_intro_falling_pieces()
+        im._INTRO_TIME = 42.0
+        im.shutdown_intro()
+        assert im._INTRO_PARTICLES is None
+        assert im._INTRO_PIECES is None
+        assert im._INTRO_TIME == 0.0
 
     def test_draw_intro_piece_no_crash(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
+        import tetris_game.intro as im
+        im.shutdown_intro()
         p = {
             "type": "I",
             "cells": [(0, 0), (0, 1), (0, 2), (0, 3)],
@@ -587,11 +607,11 @@ class TestIntroParticles:
             "size_mult": 1.0,
         }
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
-        am._draw_intro_piece(p, elapsed=1.0, surface=surf)
+        im._draw_intro_piece(p, elapsed=1.0, surface=surf)
 
     def test_draw_intro_piece_rotation(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
+        import tetris_game.intro as im
+        im.shutdown_intro()
         p = {
             "type": "T",
             "cells": [(0, 1), (1, 0), (1, 1), (1, 2)],
@@ -606,27 +626,27 @@ class TestIntroParticles:
             "size_mult": 1.0,
         }
         surf = pygame.Surface((TOTAL_WIDTH, TOTAL_HEIGHT))
-        am._draw_intro_piece(p, elapsed=1.0, surface=surf)
+        im._draw_intro_piece(p, elapsed=1.0, surface=surf)
 
     def test_ensure_intro_surface(self, fresh_pygame):
-        import tetris_game.app as am
-        surf = am._ensure_intro_surface(100, 100)
+        import tetris_game.intro as im
+        surf = im._ensure_intro_surface(100, 100)
         assert surf.get_size() == (100, 100)
 
     def test_intro_time_increments(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
-        am._INTRO_TIME = 0.0
-        am._INTRO_TIME += 0.016
+        import tetris_game.intro as im
+        im.shutdown_intro()
+        im._INTRO_TIME = 0.0
+        im._INTRO_TIME += 0.016
 
     def test_intro_time_is_finite(self, fresh_pygame):
-        import tetris_game.app as am
-        am._shutdown_intro()
-        am._INTRO_TIME = 0.0
+        import tetris_game.intro as im
+        im.shutdown_intro()
+        im._INTRO_TIME = 0.0
         for _ in range(1000):
-            am._INTRO_TIME += 0.016
-        assert am._INTRO_TIME < 10000
-        assert am._INTRO_TIME > 0
+            im._INTRO_TIME += 0.016
+        assert im._INTRO_TIME < 10000
+        assert im._INTRO_TIME > 0
 
 
 class TestEventLoop:

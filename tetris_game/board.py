@@ -6,6 +6,7 @@ from .settings import (
     BOARD_WIDTH, BOARD_HEIGHT, LINE_SCORES, drop_speed, TETROMINO_TYPES,
     SOFT_DROP_POINTS, HARD_DROP_POINTS,
     B2B_MULTIPLIER, COMBO_BASE,
+    LOCK_DELAY_FRAMES,
 )
 from .effects import ScreenShake, FlashOverlay, spawn_line_clear_sparks
 
@@ -41,6 +42,9 @@ class Board:
         self.shake: ScreenShake | None = None
         self.flash: FlashOverlay | None = None
         self.particles: list = []     # list of Particle objects
+        # Lock delay (ARE) state
+        self._lock_timer = 0
+        self._lock_delay_active = False
         self._spawn_next()
 
     # ------------------------------------------------------------------
@@ -105,12 +109,9 @@ class Board:
             self._spawn_next()
         else:
             # Swap: current goes to hold, held piece spawns
-            held = self.current.type
-            self.hold_type = held
-            old_next = self.next_type
-            self._fill_next_queue()
-            self.next_type = self.next_queue.pop(0)
-            self.current = Piece(old_next)
+            old_hold = self.hold_type
+            self.hold_type = self.current.type
+            self.current = Piece(old_hold)
             self.current.row, self.current.col = 0, 3
 
         self.hold_used = True
@@ -238,6 +239,7 @@ class Board:
         num_lines = len(cleared_rows)
         if num_lines == 0:
             self._last_cleared = False
+            self._combo_count = 0
             return
 
         # Remove cleared rows from top to bottom
@@ -284,6 +286,32 @@ class Board:
 
     def drop_speed(self) -> float:
         return drop_speed(self.level)
+
+    # ------------------------------------------------------------------
+    # Lock delay (ARE)
+    # ------------------------------------------------------------------
+
+    def start_lock_delay(self):
+        """Start the lock delay timer (called when piece first collides moving down)."""
+        self._lock_timer = 0
+        self._lock_delay_active = True
+
+    def tick_lock_delay(self) -> bool:
+        """Advance lock delay by one frame.
+
+        Returns True when the delay has expired and the piece should lock.
+        """
+        if not self._lock_delay_active:
+            return False
+        self._lock_timer += 1
+        if self._lock_timer >= LOCK_DELAY_FRAMES:
+            self._lock_delay_active = False
+            return True
+        return False
+
+    def reset_lock_delay(self):
+        """Reset the lock delay timer (called on movement/rotation during delay)."""
+        self._lock_timer = 0
 
     # ------------------------------------------------------------------
     # Reset

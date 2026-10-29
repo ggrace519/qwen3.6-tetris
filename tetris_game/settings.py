@@ -109,3 +109,14 @@ MIN_SPEED = 0.05
 def drop_speed(level: int) -> float:
     """Return drop interval in seconds for the given level."""
     return max(MIN_SPEED, BASE_SPEED - (level - 1) * SPEED_DECREASE)
+
+
+# Lock delay (ARE): frames before a landed piece locks automatically.
+# During lock delay the player can still move/rotate ("wiggle").
+LOCK_DELAY_FRAMES = 24
+
+# DAS (Delayed Auto-Shift): frames held before key repeat starts.
+DAS_FRAMES = 10
+
+# ARR (Auto Repeat Rate): frames between key repeats.
+ARR_FRAMES = 2
